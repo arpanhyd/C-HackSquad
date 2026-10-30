@@ -1,4 +1,5 @@
 # AquaGuardian: Deep Clean
+# C:// Hack -- HackSquad
 
 A 2D web game built for **C://hacks 2026** (CHIREC International School) around **UN Sustainable Development Goal 6: Clean Water and Sanitation**.
 
