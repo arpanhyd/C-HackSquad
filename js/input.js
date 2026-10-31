@@ -34,12 +34,20 @@
         boost: false,
         interact: false,
         sonar: false,
-        recycler: false,
-        
+        dash: false,
         swarm: false,
         pause: false
       };
       this.justPressedActions = {};
+
+      // Touch Virtual Actions state
+      this.touchActions = {
+        boost: false,
+        interact: false,
+        sonar: false,
+        dash: false,
+        swarm: false
+      };
 
       // Gamepad index
       this.gamepadIndex = null;
@@ -67,11 +75,11 @@
       });
 
       window.addEventListener('mousedown', (e) => {
-        if (e.target && (e.target.closest('button') || e.target.closest('.skill-card') || e.target.closest('.modal-box') || e.target.closest('select') || e.target.closest('input'))) {
-          return;
-        }
         if (window.AudioEngine && !window.AudioEngine.isInitialized) {
           window.AudioEngine.init();
+        }
+        if (e.target && (e.target.closest('button') || e.target.closest('.skill-card') || e.target.closest('.modal-box') || e.target.closest('select') || e.target.closest('input'))) {
+          return;
         }
         this.mouseActive = true;
         if (e.button === 0) this.mouseDownLeft = true;
@@ -101,8 +109,6 @@
         if (window.MainGame && window.MainGame.state === 'PLAYING') {
           if (e.deltaY < -10) {
             this.wheelAction = 'sonar';
-          } else if (e.deltaY > 10) {
-            this.wheelAction = 'recycler';
           }
         }
       }, { passive: true });
@@ -148,7 +154,6 @@
       const btnBoost = document.getElementById('btnTouchBoost');
       const btnInteract = document.getElementById('btnTouchInteract');
       const btnSonar = document.getElementById('btnTouchSonar');
-      const btnRecycler = document.getElementById('btnTouchRecycler');
       const btnDash = document.getElementById('btnTouchDash');
       const btnSwarm = document.getElementById('btnTouchSwarm');
 
@@ -198,11 +203,11 @@
         const start = (e) => {
           e.preventDefault();
           if (window.AudioEngine && !window.AudioEngine.isInitialized) window.AudioEngine.init();
-          this.actions[actionName] = true;
+          this.touchActions[actionName] = true;
         };
         const end = (e) => {
           e.preventDefault();
-          this.actions[actionName] = false;
+          this.touchActions[actionName] = false;
         };
         elem.addEventListener('pointerdown', start);
         elem.addEventListener('pointerup', end);
@@ -212,7 +217,6 @@
       bindTouchBtn(btnBoost, 'boost');
       bindTouchBtn(btnInteract, 'interact');
       bindTouchBtn(btnSonar, 'sonar');
-      bindTouchBtn(btnRecycler, 'recycler');
       bindTouchBtn(btnDash, 'dash');
       bindTouchBtn(btnSwarm, 'swarm');
 
@@ -269,14 +273,12 @@
       // Right Click or Shift or F = Hydro-Dash Warp
       // Middle Click or E = Interact / Neutralize / Bio-Filter
       // Q or Scroll Up = Sonar Ping
-      // R or Scroll Down = Recycler Burst
       // G or Digit1 / Digit2 = Helper Drone Swarm
       const boost = !!(k['Space'] || this.mouseDownLeft);
       const interact = !!(k['KeyE'] || this.mouseDownMiddle);
       const sonar = !!(k['KeyQ'] || k['Digit1'] || this.wheelAction === 'sonar');
-      const recycler = !!(k['KeyR'] || k['Digit2'] || this.wheelAction === 'recycler');
-      
-      const swarm = !!(k['KeyG'] || k['Digit3']);
+      const dash = !!(k['KeyF'] || k['ShiftLeft'] || k['ShiftRight'] || this.mouseDownRight);
+      const swarm = !!(k['KeyG'] || k['Digit2'] || k['Digit3']);
       const pause = !!(k['KeyP'] || k['Escape']);
 
       this.wheelAction = null;
@@ -286,7 +288,7 @@
       if (left) kX -= 1;
       if (right) kX += 1;
       if (forward) kY -= 1;
-      if (backward) kY += 1;
+      if (backward) kY -= 1;
 
       if (kX !== 0 || kY !== 0) {
         // Pressing WASD/Arrows temporarily overrides cursor mode if desired, until mouse moves again
@@ -294,7 +296,7 @@
 
       // 2. Process Gamepad Input
       let gpX = 0, gpY = 0;
-      let gpBoost = false, gpInteract = false, gpSonar = false, gpRecycler = false, gpDash = false, gpSwarm = false, gpPause = false;
+      let gpBoost = false, gpInteract = false, gpSonar = false, gpDash = false, gpSwarm = false, gpPause = false;
 
       if (this.gamepadIndex !== null && navigator.getGamepads) {
         const gp = navigator.getGamepads()[this.gamepadIndex];
@@ -309,8 +311,7 @@
           gpBoost = gp.buttons[0] && gp.buttons[0].pressed;
           gpInteract = gp.buttons[2] && gp.buttons[2].pressed;
           gpSonar = gp.buttons[3] && gp.buttons[3].pressed;
-          gpRecycler = gp.buttons[1] && gp.buttons[1].pressed;
-          
+          gpDash = gp.buttons[5] && gp.buttons[5].pressed;
           gpSwarm = gp.buttons[4] && gp.buttons[4].pressed;
           gpPause = gp.buttons[9] && gp.buttons[9].pressed;
         }
@@ -336,12 +337,11 @@
       this.actions.left = left || this.moveAxis.x < -0.3;
       this.actions.right = right || this.moveAxis.x > 0.3;
 
-      this.actions.boost = boost || gpBoost;
-      this.actions.interact = interact || gpInteract;
-      this.actions.sonar = sonar || gpSonar;
-      this.actions.recycler = recycler || gpRecycler;
-      
-      this.actions.swarm = swarm || gpSwarm;
+      this.actions.boost = boost || gpBoost || !!this.touchActions.boost;
+      this.actions.interact = interact || gpInteract || !!this.touchActions.interact;
+      this.actions.sonar = sonar || gpSonar || !!this.touchActions.sonar;
+      this.actions.dash = dash || gpDash || !!this.touchActions.dash;
+      this.actions.swarm = swarm || gpSwarm || !!this.touchActions.swarm;
       this.actions.pause = pause || gpPause;
 
       // Just Pressed detection

@@ -84,12 +84,12 @@
             </div>
           </div>
 
-          <!-- Level Mission Timer -->
+          <!-- Level Mission Timer (1:15 min limit) -->
           <div class="stat-pill">
             <span class="stat-icon">⏱️</span>
             <div class="stat-meta">
-              <span class="stat-title">Time</span>
-              <span id="timerText" class="stat-value">00:00</span>
+              <span class="stat-title">Time Left (1:15)</span>
+              <span id="timerText" class="stat-value">01:15</span>
             </div>
           </div>
         </div>
@@ -101,8 +101,9 @@
         </div>
       </header>
 
-      <!-- Center Notifications / Combo Streaks / Bounties -->
+      <!-- Center Notifications / Combo Streaks / Bounties / SDG Tips -->
       <div class="hud-center-notifications">
+        <div id="sdgTipBanner" class="sdg-tip-banner" style="display:none;"></div>
         <div id="tutorialBanner" style="display:none; background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(9, 29, 46, 0.95)); border: 2px solid var(--primary); padding: 10px 24px; border-radius: 20px; box-shadow: 0 0 20px rgba(0,242,254,0.6); max-width: 600px; text-align: center; font-size: 14px; font-weight: bold; color: #fff;"></div>
         <div id="comboBanner" class="combo-badge" style="display:none;">TRIPLE CLEAN! 🔥</div>
         <div id="notificationBanner" class="notification-banner" style="display:none;"></div>
@@ -160,13 +161,12 @@
             <span class="skill-name">Sonar</span>
             <div id="cdSonar" class="cooldown-overlay"></div>
           </div>
-          <div class="skill-card ready" onclick="if(window.MainGame && window.MainGame.currentLevel && window.MainGame.currentLevel.drone && window.MainGame.currentLevel.drone.recyclerCooldown<=0) window.MainGame.currentLevel.drone.triggerRecyclerBurst();" title="R or Scroll Down for Recycler Burst">
-            <span class="skill-key">R</span>
-            <span class="skill-icon">🌀</span>
-            <span class="skill-name">Recycler</span>
-            <div id="cdRecycler" class="cooldown-overlay"></div>
+          <div class="skill-card ready" onclick="if(window.MainGame && window.MainGame.currentLevel && window.MainGame.currentLevel.drone && window.MainGame.currentLevel.drone.dashCooldown<=0) window.MainGame.currentLevel.drone.triggerHydroDash();" title="Right-Click, Shift, or F for Hydro-Dash Warp">
+            <span class="skill-key">RMB</span>
+            <span class="skill-icon">⚡</span>
+            <span class="skill-name">Dash</span>
+            <div id="cdDash" class="cooldown-overlay"></div>
           </div>
-
           <div class="skill-card ready" onclick="if(window.MainGame && window.MainGame.currentLevel && window.MainGame.currentLevel.drone && window.MainGame.currentLevel.drone.swarmCooldown<=0) window.MainGame.currentLevel.drone.triggerHelperSwarm();" title="G or Key 3 to Deploy Helper Mini-Drones">
             <span class="skill-key">G</span>
             <span class="skill-icon">🤖</span>
@@ -191,8 +191,7 @@
         <button id="btnTouchBoost" class="touch-btn">🚀<br>BOOST</button>
         <button id="btnTouchInteract" class="touch-btn">🔧<br>USE</button>
         <button id="btnTouchSonar" class="touch-btn">📡<br>SONAR</button>
-        <button id="btnTouchRecycler" class="touch-btn">🌀<br>BURST</button>
-
+        <button id="btnTouchDash" class="touch-btn">⚡<br>DASH</button>
         <button id="btnTouchSwarm" class="touch-btn">🤖<br>SWARM</button>
       </div>
     </div>
@@ -214,7 +213,8 @@
         <div style="font-size: 54px;">⚡👑⚡</div>
         <h1 style="color:#ffd600; font-size:36px; text-transform:uppercase; letter-spacing:2px;">LEVEL UP!</h1>
         <h2 style="color:var(--primary); margin:8px 0;">You Reached Level <span id="levelUpNum">2</span>!</h2>
-        <p style="color:var(--text-muted); font-size:14px;">New drone skins and bonuses have been unlocked in your Locker!</p>
+        <div id="levelUpReward" style="font-size:16px; color:#ffd600; font-weight:bold; margin:6px 0;"></div>
+        <p style="color:var(--text-muted); font-size:14px;">New drone upgrades, skins, and credit bonuses have been unlocked!</p>
         <div style="margin-top:16px;">
           <button class="btn btn-primary" onclick="document.getElementById('levelUpBanner').style.display='none'">Awesome!</button>
         </div>
@@ -381,6 +381,10 @@
             <div class="title">Wildlife Preservation (Eco-Karma)</div>
             <div id="reportKarma" class="number" style="color:var(--eco-green);">100%</div>
           </div>
+          <div class="stat-box">
+            <div class="title">Level Completion Bounty</div>
+            <div id="reportReward" class="number" style="color:#ffd600;">+200 Credits</div>
+          </div>
         </div>
 
         <!-- SDG 6 Mandatory Water Quiz Gate -->
@@ -446,17 +450,16 @@
         <div class="keys-grid" style="margin:16px 0;">
           <div class="key-item"><span class="kbd">🖱️ Cursor</span> <span>Spaceship Follows Cursor Directly</span></div>
           <div class="key-item"><span class="kbd">Left Click / Space</span> <span>Hydro-Boost Engine</span></div>
-
+          <div class="key-item"><span class="kbd">Right Click / Shift / F</span> <span>Hydro-Dash Warp Impulse</span></div>
           <div class="key-item"><span class="kbd">Auto-Hover / E</span> <span>Neutralize Barrels & Bio-Filter</span></div>
           <div class="key-item"><span class="kbd">Q / Scroll Up / 1</span> <span>Sonar Ping Radar</span></div>
-          <div class="key-item"><span class="kbd">R / Scroll Down / 2</span> <span>Recycler Burst Shockwave</span></div>
-          <div class="key-item"><span class="kbd">G / Key 3</span> <span>Deploy Autonomous Helper Mini-Drones</span></div>
+          <div class="key-item"><span class="kbd">G / Key 2 / Key 3</span> <span>Deploy Autonomous Helper Mini-Drones</span></div>
           <div class="key-item"><span class="kbd">WASD / Arrows</span> <span>Optional Classic Keyboard Steering</span></div>
           <div class="key-item"><span class="kbd">P / Esc</span> <span>Pause / Resume</span></div>
         </div>
 
         <div style="font-size:12px;color:var(--text-muted);border-top:1px solid rgba(255,255,255,0.1);padding-top:10px;">
-          🎮 <strong>Gamepad:</strong> Left Stick = Steer & Drift | A = Boost | X = Interact | Y = Sonar | B = Recycler | Start = Pause
+          🎮 <strong>Gamepad:</strong> Left Stick = Steer & Drift | A = Boost | X = Interact | Y = Sonar | Start = Pause
         </div>
 
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
@@ -562,7 +565,7 @@
             <p><strong>⚙️ Engine:</strong> Custom Vanilla HTML5 2D Canvas + WebAudio API (Zero external assets/libraries)</p>
             <p><strong>🎨 Art & Audio:</strong> 100% Procedurally generated vector graphics, boids flocking, and synthetic dynamic soundscapes</p>
           </div>
-          <p style="font-size:12px;color:var(--text-muted);">Designed, coded, and tested for C://hacks 2026 to raise awareness for UN Sustainable Development Goal 6.</p>
+          <p style="font-size:12px;color:var(--text-muted);">Developed with Google Antigravity CLI assistance from a human-written design specification, thoroughly tested, reviewed, and tuned by the team.</p>
         </div>
         <div style="display:flex;justify-content:flex-end;margin-top:14px;">
           <button class="btn btn-secondary btn-close-modal">Close</button>
@@ -574,7 +577,7 @@
     <div id="modalGameOver" class="modal-overlay">
       <div class="modal-box" style="text-align:center;">
         <h2 style="color:var(--toxic-red);">Ecosystem Collapsed</h2>
-        <p id="gameOverReason" style="color:var(--text-muted);margin:10px 0;">The water quality fell to 0%.</p>
+        <p id="gameOverReason" style="color:var(--text-muted);margin:14px 0;white-space:pre-line;line-height:1.6;font-size:14px;background:rgba(255,23,68,0.1);padding:12px;border-radius:10px;border:1px solid rgba(255,23,68,0.3);">The water quality fell to 0%.</p>
         <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;">
           <button id="btnGameOverRetry" class="btn btn-primary">🔄 Try Again</button>
           <button id="btnGameOverMenu" class="btn btn-secondary">🏠 Main Menu</button>

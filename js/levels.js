@@ -37,9 +37,9 @@
       title: "Mission 1: Crystal River",
       subtitle: "Freshwater Riverine Basin — Plastic Accumulation Threat",
       icon: "🏞️",
-      wqiTarget: "80%",
+      wqiTarget: "100%",
       objectives: [
-        "Raise the Water Quality Index (WQI) from 45% to at least 80%",
+        "Reach 100% Water Quality Index (WQI) to fully restore the river and promote to Level 2",
         "Scoop floating bottles, polythene bags, and ghost fishing nets",
         "Offload plastics at offshore Recycling Buoys for Eco-Credits & XP",
         "Smash floating Mystery Supply Crates for bonus power-ups",
@@ -53,15 +53,15 @@
       title: "Mission 2: Urban Canal",
       subtitle: "Industrial Waterway — Chemical Leach & Storm Sewer Runoff",
       icon: "🏭",
-      wqiTarget: "80%",
+      wqiTarget: "100%",
       objectives: [
-        "Raise the Water Quality Index (WQI) to 80% to restore the canal",
-        "Neutralize all 4 leaking toxic chemical barrels [HOLD E]",
-        "Install molecular bio-filters on all 4 storm drainage pipes [E mini-game]",
+        "Reach 100% Water Quality Index (WQI) to promote to Level 3 (Ocean Bay)",
+        "Neutralize all leaking toxic chemical barrels [HOLD E]",
+        "Install molecular bio-filters on all storm drainage pipes [E mini-game]",
         "Evade moving cargo barges and avoid oil slicks",
         "Recycle collected plastic waste at solar buoys"
       ],
-      intel: "Heavy urban runoff has deposited corroded chemical barrels into the municipal canal bed. Four untreated storm drainage pipes are continuously spewing raw industrial effluent, collapsing local water quality.",
+      intel: "Heavy urban runoff has deposited corroded chemical barrels into the municipal canal bed. Untreated storm drainage pipes and an illegal polluter barge are continuously spewing raw effluent, collapsing local water quality.",
       tips: "Hold [E] within range of yellow hazard barrels to maintain the containment ring. When clamping bio-filters on drainage pipes, stop the marker inside the green zone!"
     },
     3: {
@@ -69,25 +69,25 @@
       title: "Mission 3: Ocean Bay",
       subtitle: "Coastal Coral Lagoon — Endangered Reefs & Wildlife Sanctuary",
       icon: "🪸",
-      wqiTarget: "85%",
+      wqiTarget: "100%",
       objectives: [
-        "Purify the marine bay to reach 85% Water Quality Index (WQI)",
+        "Reach 100% Water Quality Index (WQI) to rescue the lagoon and promote to the Final Boss",
         "Protect endangered tropical fish and fragile coral reefs (Maintain Eco-Karma ≥ 80%)",
-        "Disperse thick oil slicks using the Recycler Burst shockwave [R]",
+        "Navigate through hazardous oil slicks and avoid coral collisions",
         "Collect toxic microplastics and ocean ghost nets",
         "Smash floating supply drops for invincibility shields and speed overcharge"
       ],
-      intel: "This delicate coral lagoon houses endangered damselfish, sea turtles, and coral formations. Reckless high-speed collisions with coral or driving through fish schools at boost speed will severely penalize your Eco-Karma and WQI.",
-      tips: "Press [R] to deploy the Recycler Burst shockwave to instantly disperse viscous oil slicks. Avoid ramming into coral outcroppings!"
+      intel: "This delicate coral lagoon houses endangered damselfish, sea turtles, and coral formations. Collisions with coral or driving through fish schools at boost speed will severely penalize your Eco-Karma and WQI.",
+      tips: "Steer carefully around viscous oil slicks and avoid ramming into coral outcroppings to maintain high Eco-Karma!"
     },
     4: {
       levelId: 4,
       title: "Boss Raid: The Sludge Leviathan",
       subtitle: "Industrial Harbor Estuary — Catastrophic Wastewater Monster",
       icon: "👾",
-      wqiTarget: "90%",
+      wqiTarget: "100%",
       objectives: [
-        "Defeat the Sludge Leviathan and clean the harbor estuary",
+        "Defeat the Sludge Leviathan and achieve 100% WQI for Complete Global Eco-Victory!",
         "Dodge telegraphed red danger zones and toxic sludge meteors",
         "Approach all 3 industrial sewage outflow nodes",
         "Install master bio-filter clamps on all 3 vents [E mini-game]",
@@ -123,11 +123,27 @@
       this.targetWQI = 80;
       this.ecoKarma = 100;
       this.timer = 0;
-      // 3 minutes for level 1 (180s), decreasing by 10 seconds each level (L1: 180s, L2: 170s, L3: 160s, L4: 150s)
-      this.timeLimit = Math.max(90, 190 - (this.id === 0 ? 0 : this.id) * 10);
+      this.maxTime = 75; // 1:15 min mission timer limit (75 seconds)
       this.timeOfDay = 0.25;
       this.dayCycleSpeed = 0.015;
       this.sunIntensity = 1.0;
+      this.levelClearBonus = 0;
+
+      // Periodic SDG 6 Educational Tip Ticker
+      this.sdgTipTimer = 0;
+      this.sdgTipIndex = 0;
+      this.sdgTips = [
+        "UN SDG 6.3: Over 80% of human wastewater is discharged into rivers and seas without treatment. Filter pipes to halt toxic runoff!",
+        "Did You Know? A plastic bottle takes up to 450 years to decompose in oceans, breaking into microplastics. Scoop them up!",
+        "UN SDG 6.6: Protecting water-related ecosystems safeguards over 40% of all aquatic species. Avoid hitting coral reefs!",
+        "Clean Water Insight: A single corroded chemical barrel can poison millions of liters of groundwater. Hold [E] to tractor-neutralize barrels!",
+        "Dissolved Oxygen (DO) must stay above 5-6 mg/L for fish to breathe. Purifying water restores life-giving oxygen!",
+        "UN SDG 6.1: Access to safe and affordable drinking water is a basic human right. Cleaning debris directly helps global water health!",
+        "Ghost fishing nets make up ~10% of ocean plastic and continue trapping marine life for decades. Scoop them into your recycling hold!",
+        "Turbidity measures water cloudiness: high silt and particulate levels block sunlight from reaching underwater flora and coral reefs.",
+        "Water pH balance (6.5 - 8.5) is critical: industrial acid runoff harms fish gills and accelerates coral bleaching.",
+        "Eco-Karma Tip: High-speed propeller cavitation scares schooling damselfish. Clean conscientiously without disturbing aquatic wildlife!"
+      ];
 
       // Stats for Report Card
       this.debrisCollectedCount = 0;
@@ -171,26 +187,26 @@
     update(dt) {
       this.timer += dt;
 
-      // Show an SDG 6 water fact & gameplay tip every 30 seconds
-      if (!this.sdgTipTimer) this.sdgTipTimer = 0;
-      if (typeof this.sdgTipIndex !== 'number') this.sdgTipIndex = 0;
+      // 1:15 min Level Timer (75s Limit) for all playable mission levels (Tutorial/Level 0 is exempt)
+      if (this.id > 0 && !this.isCompleted && !this.isFailed) {
+        if (this.timer >= this.maxTime) {
+          this.isFailed = true;
+          this.onTimeoutFail();
+          return;
+        }
+      }
+
+      // Periodic UN SDG 6 Educational Tip Ticker (every 25 seconds)
       this.sdgTipTimer += dt;
-      if (this.sdgTipTimer >= 30.0) {
+      if (this.sdgTipTimer >= 25) {
         this.sdgTipTimer = 0;
-        const tips = [
-          "💧 SDG 6 Tip: Over 80% of global wastewater flows into rivers untreated — clamp bio-filters on sewer pipes [E] to stop it!",
-          "💧 SDG 6 Tip: Leaking chemical drums poison groundwater aquifers. Hover near yellow barrels to neutralize them!",
-          "💧 SDG 6 Tip: Plastics break down into toxic microplastics. Scoop trash and dock at yellow Recycling Buoys to raise WQI!",
-          "💧 SDG 6 Tip: Dissolved Oxygen (DO) above 6.5 mg/L is needed for healthy fish. Cleaning the water restores oxygen levels!",
-          "💧 SDG 6 Tip: High Turbidity (cloudiness) blocks sunlight from aquatic plants. Filtering pipes clears the water!",
-          "💧 SDG 6 Tip: Healthy freshwater has a neutral pH around 7.0. Acidic chemical leaks drop pH and harm coral reefs!",
-          "💧 SDG 6 Tip: Press [R] or Scroll Down near dark oil slicks to disperse them with your Recycler Burst!",
-          "💧 SDG 6 Tip: Press [G] to deploy Helper Mini-Drones that automatically laser-collect nearby plastic waste!"
-        ];
-        const tip = tips[this.sdgTipIndex % tips.length];
-        this.sdgTipIndex++;
-        if (window.UI) window.UI.showNotification(tip);
-        window.Engine.floatingTexts.spawn(this.drone.pos.x, this.drone.pos.y - 55, "💧 SDG 6 ECO-TIP RECEIVED!", '#00f2fe', 15, 2.5);
+        if (this.sdgTips && this.sdgTips.length > 0) {
+          const tip = this.sdgTips[this.sdgTipIndex % this.sdgTips.length];
+          this.sdgTipIndex++;
+          if (window.UI) {
+            window.UI.showSDGTip(tip);
+          }
+        }
       }
 
       this.timeOfDay = (this.timeOfDay + this.dayCycleSpeed * dt) % 1.0;
@@ -277,8 +293,9 @@
 
             const isDouble = this.drone.activePowerup === 'DOUBLE';
             const multiplier = isDouble ? 2 : 1;
+            const coinMult = (this.drone && this.drone.coinMultiplier !== undefined) ? this.drone.coinMultiplier : 1.0;
             const comboBonus = Math.floor(this.combo * 2);
-            const totalCredits = (d.config.credits + comboBonus) * multiplier;
+            const totalCredits = Math.round((d.config.credits + comboBonus) * multiplier * coinMult);
             const totalXP = (d.config.xp + comboBonus * 2) * multiplier;
 
             this.score += totalCredits * 15;
@@ -309,6 +326,9 @@
             xpEarned += item.config.xp;
           });
 
+          const coinMult = (this.drone && this.drone.coinMultiplier !== undefined) ? this.drone.coinMultiplier : 1.0;
+          earned = Math.round(earned * coinMult);
+
           this.wqi = Math.min(100, this.wqi + wqiGain);
           window.SaveSystem.addCredits(earned);
           window.SaveSystem.addXP(xpEarned);
@@ -327,17 +347,16 @@
         barrel.update(dt);
 
         if (!barrel.isNeutralized) {
-          // Very gentle WQI drain so gameplay feels relaxed
-          this.wqi = Math.max(0, this.wqi - 0.022 * dt);
+          // Chill & playable pollution decay rate (slowed down from 0.25 to 0.04)
+          const decayMult = (this.drone && this.drone.decayDampener !== undefined) ? this.drone.decayDampener : 1.0;
+          this.wqi = Math.max(0, this.wqi - 0.04 * decayMult * dt);
 
-          const neutRange = this.drone.neutralizeRange || 125;
-          const neutSpeed = this.drone.neutralizeSpeed || 0.85;
           const dist = this.drone.pos.dist(barrel.pos);
-          if (dist < neutRange) {
+          if (dist < 120) {
             // Auto-neutralize when hovering near barrel in Cursor Mode OR holding E
             if (window.Input.isDown('interact') || window.Input.isCursorMode()) {
               activeTarget = barrel;
-              this.drone.neutralizeProgress += dt * neutSpeed;
+              this.drone.neutralizeProgress += dt * 0.75;
               if (window.AudioEngine && Math.random() < 0.2) {
                 window.AudioEngine.play('neutralize_hum');
               }
@@ -369,7 +388,9 @@
       this.pipes.forEach(pipe => {
         pipe.update(dt);
         if (!pipe.isFiltered) {
-          this.wqi = Math.max(0, this.wqi - 0.032 * dt);
+          // Chill & playable pipe effluent decay (slowed down from 0.35 to 0.05)
+          const decayMult = (this.drone && this.drone.decayDampener !== undefined) ? this.drone.decayDampener : 1.0;
+          this.wqi = Math.max(0, this.wqi - 0.05 * decayMult * dt);
           const dist = this.drone.pos.dist(pipe.pos);
           if (dist < 95 && window.Input.isJustPressed('interact')) {
             window.UI.startFilterMinigame((success) => {
@@ -404,11 +425,11 @@
         f.update(dt, this.bounds);
 
         if (this.drone.pos.dist(f.pos) < 22 && this.drone.isBoosting && !this.drone.safeForFish && this.drone.activePowerup !== 'SHIELD') {
-          const protect = this.drone.wildlifeProtection || 0;
-          if (this.drone.collisionCooldown <= 0 && protect < 1.0) {
+          if (this.drone.collisionCooldown <= 0) {
             this.wildlifeHarmed++;
-            this.ecoKarma = Math.max(0, this.ecoKarma - 6 * (1 - protect));
-            this.wqi = Math.max(0, this.wqi - 2 * (1 - protect));
+            const karmaMult = (this.drone && this.drone.karmaArmor !== undefined) ? this.drone.karmaArmor : 1.0;
+            this.ecoKarma = Math.max(0, this.ecoKarma - 6 * karmaMult);
+            this.wqi = Math.max(0, this.wqi - 0.5 * karmaMult);
             this.drone.collisionCooldown = 0.6;
             window.Engine.floatingTexts.spawn(f.pos.x, f.pos.y, 'Wildlife Disturbed! -Eco-Karma', '#ff3d71', 14);
             if (window.AudioEngine) window.AudioEngine.play('coral_bump');
@@ -425,12 +446,12 @@
           this.drone.pos.y = coral.pos.y + pushVec.y;
           this.drone.vel.scale(-0.4);
 
-          const protect = this.drone.wildlifeProtection || 0;
-          if (this.drone.activePowerup === 'SHIELD' || protect >= 1.0) {
-            window.Engine.floatingTexts.spawn(coral.pos.x, coral.pos.y, 'BUMPER PROTECTED!', '#00f2fe', 15);
+          if (this.drone.activePowerup === 'SHIELD') {
+            window.Engine.floatingTexts.spawn(coral.pos.x, coral.pos.y, 'SHIELD BOUNCE!', '#00f2fe', 16);
           } else if (this.drone.collisionCooldown <= 0) {
             this.wildlifeHarmed++;
-            this.ecoKarma = Math.max(0, this.ecoKarma - 8 * (1 - protect));
+            const karmaMult = (this.drone && this.drone.karmaArmor !== undefined) ? this.drone.karmaArmor : 1.0;
+            this.ecoKarma = Math.max(0, this.ecoKarma - 8 * karmaMult);
             this.drone.collisionCooldown = 0.5;
             window.Engine.camera.shake(6, 0.3);
             window.Engine.floatingTexts.spawn(coral.pos.x, coral.pos.y, 'Coral Damaged! -Eco-Karma', '#ff3d71', 14);
@@ -461,6 +482,10 @@
         for (let i = 0; i < this.boss.outflows.length; i++) {
           const vent = this.boss.outflows[i];
           if (!vent.isFiltered) {
+            // Unfiltered outflow slowly leaks sludge (mitigated by Purifier upgrade)
+            const decayMult = (this.drone && this.drone.decayDampener !== undefined) ? this.drone.decayDampener : 1.0;
+            this.wqi = Math.max(0, this.wqi - 0.03 * decayMult * dt);
+
             const vPos = this.boss.getVentWorldPos(vent);
             if (this.drone.pos.dist(vPos) < 70 && window.Input.isJustPressed('interact')) {
               window.UI.startFilterMinigame((success) => {
@@ -492,44 +517,64 @@
     checkCompletion() {
       if (this.wqi <= 0 && !this.isFailed) {
         this.isFailed = true;
-        this.triggerFailure("The aquatic ecosystem collapsed from toxic sludge.");
-        return;
-      }
-
-      // Check time limit (skip tutorial level 0)
-      if (this.id > 0 && this.timer >= this.timeLimit && !this.isCompleted && !this.isFailed) {
-        this.isFailed = true;
-        this.triggerFailure(`Time limit exceeded (${Math.floor(this.timeLimit/60)}m ${this.timeLimit%60}s)! Water Quality Index target not reached in time.`);
+        window.MainGame.triggerGameOver("The aquatic ecosystem collapsed from toxic sludge.");
         return;
       }
 
       if (this.id === 4) {
-        if (this.boss && this.boss.isPurified && !this.isCompleted) {
+        if ((this.wqi >= 100 || (this.boss && this.boss.isPurified)) && !this.isCompleted) {
           this.isCompleted = true;
           this.onWin();
         }
       } else {
-        if (this.wqi >= this.targetWQI && !this.isCompleted) {
+        if (this.wqi >= 100 && !this.isCompleted) {
           this.isCompleted = true;
           this.onWin();
         }
       }
     }
 
-    triggerFailure(reason) {
-      const res = window.SaveSystem ? window.SaveSystem.recordLevelFailure(this.id) : { penalty: 90, failCount: 1, newLevel: 1 };
-      if (window.AudioEngine) window.AudioEngine.play('filter_fail');
+    onTimeoutFail() {
+      if (!window.SaveSystem) return;
+
+      // Increment failure streak
+      const fails = (window.SaveSystem.data.consecutiveFails = (window.SaveSystem.data.consecutiveFails || 0) + 1);
+
+      // Decrease player level
+      const prevPlayerLvl = window.SaveSystem.data.playerLevel;
+      if (window.SaveSystem.data.playerLevel > 1) {
+        window.SaveSystem.data.playerLevel--;
+      }
+      // Demote unlocked mission level if unable to beat it
+      if (window.SaveSystem.data.unlockedLevel > 1 && window.SaveSystem.data.unlockedLevel === this.id) {
+        window.SaveSystem.data.unlockedLevel = Math.max(1, window.SaveSystem.data.unlockedLevel - 1);
+      }
+
+      // Progressive coin penalty: scales higher on repeat failures
+      const penalty = 50 * fails;
+      const prevCoins = window.SaveSystem.data.ecoCredits;
+      window.SaveSystem.data.ecoCredits = Math.max(0, window.SaveSystem.data.ecoCredits - penalty);
+      const lostCoins = prevCoins - window.SaveSystem.data.ecoCredits;
+
+      window.SaveSystem.save();
+
+      if (window.AudioEngine) {
+        window.AudioEngine.play('filter_fail');
+      }
+
       window.MainGame.triggerGameOver(
-        `${reason} — ⚠️ Penalty (Attempt #${res.failCount}): -${res.penalty} Coins removed & Level decreased to LVL ${res.newLevel}!`
+        `⏱️ Time's Up! You ran out of time (1:15 min mission limit).\n` +
+        `📉 Player Level decreased: Lv ${prevPlayerLvl} ➔ Lv ${window.SaveSystem.data.playerLevel}\n` +
+        `🪙 Coin Penalty: -${lostCoins} Eco-Credits (Fail #${fails} - penalty increases with consecutive fails!)`
       );
     }
 
     onWin() {
       let stars = 1;
-      if (this.wqi >= 88 && this.ecoKarma >= 80) stars = 2;
-      if (this.wqi >= 94 && this.ecoKarma >= 95) stars = 3;
+      if (this.wqi >= 95 && this.ecoKarma >= 80) stars = 2;
+      if (this.wqi >= 100 && this.ecoKarma >= 90) stars = 3;
 
-      if (this.id === 1 && this.timer <= 75) {
+      if (this.id === 1 && this.timer <= 50) {
         window.SaveSystem.unlockAchievement('speed_cleaner');
       }
       if (this.id === 3 && this.wildlifeHarmed === 0) {
@@ -539,11 +584,28 @@
         window.SaveSystem.unlockAchievement('coral_protector');
       }
 
-      const missionBonus = window.SaveSystem.recordLevelCompletion(this.id, this.score, stars, this.wqi, this.timer);
-      window.SaveSystem.addXP(300 + stars * 100);
-      if (window.UI) {
-        window.UI.showNotification(`🏆 Mission Complete! Earned +${missionBonus} Bonus Coins!`);
+      window.Engine.camera.shake(10, 0.5);
+      if (window.AudioEngine) window.AudioEngine.play('levelup');
+      window.Engine.floatingTexts.spawn(this.drone.pos.x, this.drone.pos.y - 45, '🌊 100% WQI REACHED! PROMOTING!', '#00e676', 22);
+
+      if (this.id < 4) {
+        if (window.UI) window.UI.showNotification(`🌊 100% WQI Restored! Promoting to Level ${this.id + 1} (Harder)...`);
+      } else {
+        if (window.UI) window.UI.showNotification(`🏆 100% WQI Restored! All waters saved! Complete Victory!`);
       }
+
+      if (window.SaveSystem) {
+        // Reset failure streak on success!
+        window.SaveSystem.data.consecutiveFails = 0;
+
+        // Level Clear Reward money + 100 WQI perfection bonus
+        const levelBonus = 150 * this.id + stars * 50 + (this.wqi >= 100 ? 100 : 0);
+        window.SaveSystem.addCredits(levelBonus);
+        this.levelClearBonus = levelBonus;
+      }
+
+      window.SaveSystem.recordLevelCompletion(this.id, this.score, stars, this.wqi, this.timer);
+      window.SaveSystem.addXP(300 + stars * 100);
 
       setTimeout(() => {
         window.MainGame.showReportCard({
@@ -557,7 +619,8 @@
           pipesCount: this.pipesFilteredCount,
           barrelsCount: this.barrelsNeutralizedCount,
           ecoKarma: Math.round(this.ecoKarma),
-          timeSec: Math.round(this.timer)
+          timeSec: Math.round(this.timer),
+          levelReward: this.levelClearBonus
         });
       }, 1000);
     }
@@ -745,6 +808,9 @@
         if (this.drone.cargo.length === 0 && this.debrisCollectedCount >= 1 && this.score > 0) {
           this.stepTimer = 0;
           this.advanceStep();
+        } else if (this.drone.cargo.length === 0 && this.debrisList.length === 0) {
+          // Safeguard: spawn fresh debris so cadet is never stranded without debris to deposit
+          this.debrisList.push(new Ent.Debris(this.drone.pos.x + 80, this.drone.pos.y, 'BOTTLE'));
         }
       } else if (this.step === 5) {
         // Did player fire sonar?
@@ -765,9 +831,9 @@
   // --- LEVEL 1: CRYSTAL RIVER ---
   class Level1_CrystalRiver extends BaseLevel {
     constructor() {
-      super(1, "Crystal River", "Scoop plastic debris, unlock Supply Drops, and maintain high-speed drift streaks to restore the river.", { minX: 0, minY: 0, maxX: 2200, maxY: 1800 });
+      super(1, "Crystal River", "Scoop plastic debris, unlock Supply Drops, and reach 100% WQI to promote to Level 2.", { minX: 0, minY: 0, maxX: 2200, maxY: 1800 });
       this.wqi = 45;
-      this.targetWQI = 80;
+      this.targetWQI = 100;
     }
 
     init() {
@@ -781,13 +847,8 @@
       this.crates.push(new Ent.SupplyCrate(900, 1200));
       this.crates.push(new Ent.SupplyCrate(1500, 700));
 
-      // Neutralizer barrels in Level 1
-      this.barrels.push(new Ent.ToxicBarrel(750, 1150));
-      this.barrels.push(new Ent.ToxicBarrel(1350, 950));
-      this.barrels.push(new Ent.ToxicBarrel(1050, 650));
-
       const debrisTypes = ['BOTTLE', 'BAG', 'RINGS', 'NET', 'MICROPLASTIC'];
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 45; i++) {
         const x = 200 + Math.random() * 1800;
         const y = 200 + Math.random() * 1400;
         const type = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
@@ -803,9 +864,9 @@
   // --- LEVEL 2: URBAN CANAL ---
   class Level2_UrbanCanal extends BaseLevel {
     constructor() {
-      super(2, "Urban Canal", "Neutralize hazardous chemical barrels, filter municipal sewer pipes, and dodge moving barges.", { minX: 0, minY: 0, maxX: 2600, maxY: 2000 });
-      this.wqi = 30;
-      this.targetWQI = 80;
+      super(2, "Urban Canal", "Neutralize toxic barrels, filter sewer pipes, and reach 100% WQI to promote to Level 3.", { minX: 0, minY: 0, maxX: 2600, maxY: 2000 });
+      this.wqi = 25;
+      this.targetWQI = 100;
     }
 
     init() {
@@ -827,30 +888,30 @@
       this.barrels.push(new Ent.ToxicBarrel(1300, 900));
       this.barrels.push(new Ent.ToxicBarrel(1700, 1300));
       this.barrels.push(new Ent.ToxicBarrel(1100, 1600));
-      this.barrels.push(new Ent.ToxicBarrel(500, 900));
-      this.barrels.push(new Ent.ToxicBarrel(2000, 500));
-      this.barrels.push(new Ent.ToxicBarrel(1500, 1700));
+      this.barrels.push(new Ent.ToxicBarrel(1900, 700));
 
       const debrisTypes = ['BOTTLE', 'BAG', 'RINGS', 'NET', 'MICROPLASTIC'];
-      for (let i = 0; i < 45; i++) {
+      for (let i = 0; i < 50; i++) {
         const x = 300 + Math.random() * 2000;
         const y = 300 + Math.random() * 1400;
         const type = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
         this.debrisList.push(new Ent.Debris(x, y, type));
       }
 
-      this.polluters.push(new Ent.PolluterBoat(600, 400, [
+      const polluter = new Ent.PolluterBoat(600, 400, [
         new V2(600, 400), new V2(2000, 400), new V2(2000, 1500), new V2(600, 1500)
-      ]));
+      ]);
+      polluter.dumpInterval = 4.5;
+      this.polluters.push(polluter);
     }
   }
 
   // --- LEVEL 3: OCEAN BAY ---
   class Level3_OceanBay extends BaseLevel {
     constructor() {
-      super(3, "Ocean Bay", "Disperse oil slicks, protect fragile coral and fish flocks, and prepare for the ultimate boss encounter.", { minX: 0, minY: 0, maxX: 3000, maxY: 2400 });
-      this.wqi = 35;
-      this.targetWQI = 85;
+      super(3, "Ocean Bay", "Protect fragile coral and marine life, avoid oil slicks, and reach 100% WQI to promote to the Boss Raid.", { minX: 0, minY: 0, maxX: 3000, maxY: 2400 });
+      this.wqi = 20;
+      this.targetWQI = 100;
     }
 
     init() {
@@ -870,24 +931,24 @@
       this.coralReefs.push(new Ent.CoralReef(1900, 900, 55));
       this.coralReefs.push(new Ent.CoralReef(700, 1400, 40));
       this.coralReefs.push(new Ent.CoralReef(2200, 1500, 45));
+      this.coralReefs.push(new Ent.CoralReef(1600, 1500, 48));
 
       this.oilSlicks.push(new Ent.OilSlick(900, 800, 75));
       this.oilSlicks.push(new Ent.OilSlick(1600, 600, 90));
       this.oilSlicks.push(new Ent.OilSlick(2100, 1100, 80));
       this.oilSlicks.push(new Ent.OilSlick(1200, 1700, 65));
 
-      for (let i = 0; i < 35; i++) {
+      for (let i = 0; i < 40; i++) {
         this.fish.push(new Ent.Fish(1000 + Math.random() * 800, 800 + Math.random() * 800));
       }
 
       this.barrels.push(new Ent.ToxicBarrel(800, 1000));
       this.barrels.push(new Ent.ToxicBarrel(2200, 700));
-      this.barrels.push(new Ent.ToxicBarrel(1400, 1200));
-      this.barrels.push(new Ent.ToxicBarrel(1800, 1800));
-      this.barrels.push(new Ent.ToxicBarrel(600, 2000));
+      this.barrels.push(new Ent.ToxicBarrel(1500, 600));
+      this.barrels.push(new Ent.ToxicBarrel(1200, 1300));
 
       const debrisTypes = ['MICROPLASTIC', 'NET', 'BOTTLE', 'BAG'];
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < 60; i++) {
         const x = 300 + Math.random() * 2400;
         const y = 300 + Math.random() * 1800;
         const type = debrisTypes[Math.floor(Math.random() * debrisTypes.length)];
@@ -899,9 +960,9 @@
   // --- LEVEL 4: BOSS SLUDGE LEVIATHAN ---
   class Level4_BossLeviathan extends BaseLevel {
     constructor() {
-      super(4, "The Sludge Leviathan", "Epic Boss Raid: Dodge telegraphed toxic meteors and clamp bio-filters onto all 3 industrial outflows!", { minX: 0, minY: 0, maxX: 2600, maxY: 2600 });
-      this.wqi = 20;
-      this.targetWQI = 90;
+      super(4, "The Sludge Leviathan", "Epic Boss Raid: Purify industrial outflows, dodge toxic meteors, and achieve 100% WQI for complete victory!", { minX: 0, minY: 0, maxX: 2600, maxY: 2600 });
+      this.wqi = 15;
+      this.targetWQI = 100;
     }
 
     init() {
@@ -915,13 +976,7 @@
 
       this.boss = new Ent.SludgeLeviathan(1300, 1100);
 
-      // Extra neutralizer barrels around the boss arena
-      this.barrels.push(new Ent.ToxicBarrel(850, 1350));
-      this.barrels.push(new Ent.ToxicBarrel(1750, 1350));
-      this.barrels.push(new Ent.ToxicBarrel(850, 850));
-      this.barrels.push(new Ent.ToxicBarrel(1750, 850));
-
-      for (let i = 0; i < 40; i++) {
+      for (let i = 0; i < 50; i++) {
         const angle = Math.random() * Math.PI * 2;
         const dist = 280 + Math.random() * 600;
         const x = 1300 + Math.cos(angle) * dist;

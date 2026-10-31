@@ -35,16 +35,16 @@
       this.magnetRadius = 45;
       this.netWidth = 38;
       this.safeForFish = false;
-      this.topSpeed = 190; // Supercharged spaceship/drone speed
+      this.topSpeed = 330; // Supercharged spaceship/drone speed
       this.turnRate = 4.3;
-      this.accel = 320;
+      this.accel = 560;
       this.solarChargeRate = 11;
       this.nightTrickle = 1.0;
 
       // Hydro-Dash & Autonomous Mini-Drone Swarm
-      
-      
-      
+      this.dashCooldown = 0;
+      this.dashTimer = 0;
+      this.afterimages = [];
       this.swarmCooldown = 0;
       this.swarmTimer = 0;
       this.swarmCount = 1;
@@ -69,7 +69,6 @@
       this.sonarMaxRadius = 500;
       this.sonarWaveRadius = 0;
       this.sonarCooldown = 0;
-      this.recyclerCooldown = 0;
       this.neutralizingTarget = null;
       this.neutralizeProgress = 0;
       this.health = 100;
@@ -108,7 +107,7 @@
       this.nightTrickle = solarData.nightTrickle;
 
       const hullData = u.getTierData('hull');
-      this.topSpeed = hullData.topSpeed; // Relaxed, easy-to-control cruising speed
+      this.topSpeed = hullData.topSpeed; // Balanced, smooth cruising speed
       this.turnRate = hullData.turnRate;
       this.accel = hullData.accel;
 
@@ -119,20 +118,23 @@
         this.swarmRange = droneData.range;
       }
 
-      if (u.config.shield) {
-        const shieldData = u.getTierData('shield');
-        this.wildlifeProtection = shieldData.protection || 0;
+      // New Upgrades
+      if (u.config.purifier) {
+        this.decayDampener = u.getTierData('purifier').decayDampener;
       } else {
-        this.wildlifeProtection = 0;
+        this.decayDampener = 1.0;
       }
 
-      if (u.config.neutralizer) {
-        const neutData = u.getTierData('neutralizer');
-        this.neutralizeSpeed = neutData.speed || 0.85;
-        this.neutralizeRange = neutData.range || 125;
+      if (u.config.karmaShield) {
+        this.karmaArmor = u.getTierData('karmaShield').karmaArmor;
       } else {
-        this.neutralizeSpeed = 0.85;
-        this.neutralizeRange = 125;
+        this.karmaArmor = 1.0;
+      }
+
+      if (u.config.bountyRadar) {
+        this.coinMultiplier = u.getTierData('bountyRadar').coinMultiplier;
+      } else {
+        this.coinMultiplier = 1.0;
       }
     }
 
@@ -140,11 +142,17 @@
       this.bobOffset += dt * 3.5;
       if (this.collisionCooldown > 0) this.collisionCooldown -= dt;
       if (this.sonarCooldown > 0) this.sonarCooldown -= dt;
-      if (this.recyclerCooldown > 0) this.recyclerCooldown -= dt;
       if (this.dashCooldown > 0) this.dashCooldown -= dt;
       if (this.swarmCooldown > 0) this.swarmCooldown -= dt;
 
-
+      if (this.dashTimer > 0) {
+        this.dashTimer -= dt;
+        this.afterimages.push({ x: this.pos.x, y: this.pos.y, angle: this.angle, alpha: 0.7 });
+      }
+      for (let i = this.afterimages.length - 1; i >= 0; i--) {
+        this.afterimages[i].alpha -= dt * 3.2;
+        if (this.afterimages[i].alpha <= 0) this.afterimages.splice(i, 1);
+      }
 
       // Update Active Power-up
       if (this.activePowerup) {
@@ -170,11 +178,11 @@
 
       let speedMultiplier = 1.0;
       if (this.isBoosting) {
-        speedMultiplier = hasInfiniteTurbo ? 2.25 : 1.85;
+        speedMultiplier = hasInfiniteTurbo ? 1.75 : 1.45;
         if (!hasInfiniteTurbo) {
           this.energy = Math.max(0, this.energy - 13 * dt);
         }
-        window.Engine.camera.zoom = 0.94;
+        window.Engine.camera.zoom = 0.96;
 
         const engineOffset = V2.fromAngle(this.angle + Math.PI, 22);
         const flameColor = hasInfiniteTurbo ? '#ff007f' : '#00f2fe';
@@ -207,12 +215,13 @@
           while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
 
           if (controlMode === 'cursor_lock') {
-            // Smoothly steer and glide the spaceship toward the cursor
-            this.angle += angleDiff * Math.min(1, dt * 14);
-            const followResponsiveness = this.isBoosting ? 9.5 : 6.5;
+            // Smooth, responsive cursor follow with balanced cruising speed
+            this.angle += angleDiff * Math.min(1, dt * 20);
+            const dampFactor = Math.min(1.0, distToCursor / 35.0);
+            const followResponsiveness = (this.isBoosting ? 13 : 9) * dampFactor;
             const desiredVx = dx * followResponsiveness;
             const desiredVy = dy * followResponsiveness;
-            const maxCursorSpd = this.topSpeed * speedMultiplier;
+            const maxCursorSpd = this.topSpeed * speedMultiplier * (this.dashTimer > 0 ? 1.5 : 1.1);
             const desLen = Math.sqrt(desiredVx * desiredVx + desiredVy * desiredVy);
             if (desLen > maxCursorSpd) {
               this.vel.set((desiredVx / desLen) * maxCursorSpd, (desiredVy / desLen) * maxCursorSpd);
@@ -221,15 +230,16 @@
             }
           } else {
             // Smooth Cursor Seek: arcade thruster pursuit toward cursor
-            this.angle += angleDiff * Math.min(1, dt * (this.turnRate * 2.8));
+            this.angle += angleDiff * Math.min(1, dt * (this.turnRate * 2.5));
             const throttleScale = Math.min(1.0, distToCursor / 90);
-            const moveVec = V2.fromAngle(this.angle, throttleScale * this.accel * 1.25 * speedMultiplier * dt);
+            const moveVec = V2.fromAngle(this.angle, throttleScale * this.accel * speedMultiplier * dt);
             this.vel.add(moveVec);
             this.vel.scale(0.94);
           }
           this.throttleAnim = Math.min(1, distToCursor / 60);
         } else {
-          this.vel.scale(0.75);
+          this.vel.scale(0.5);
+          if (this.vel.lengthSq() < 1) this.vel.set(0, 0);
           this.throttleAnim = 0;
         }
       } else {
@@ -341,12 +351,10 @@
         }
       }
 
-      // Recycler Burst
-      if (window.Input.isJustPressed('recycler') && this.recyclerCooldown <= 0 && this.energy >= 15) {
-        this.triggerRecyclerBurst();
+      // Hydro-Dash Warp Impulse [F or Shift]
+      if (window.Input.isJustPressed('dash') && this.dashCooldown <= 0 && this.energy >= 8) {
+        this.triggerHydroDash();
       }
-
-
 
       // Autonomous Helper Mini-Drone Swarm [G]
       if (window.Input.isJustPressed('swarm') && this.swarmCooldown <= 0 && this.energy >= 20) {
@@ -371,9 +379,37 @@
       }
     }
 
+    triggerHydroDash() {
+      if (this.energy < 8) {
+        if (window.UI) window.UI.showNotification("⚡ Low Solar Energy for Hydro-Dash!");
+        return;
+      }
+      this.energy = Math.max(0, this.energy - 8);
+      this.dashCooldown = 2.2;
+      this.dashTimer = 0.32;
+      const dashImpulse = V2.fromAngle(this.angle, 520);
+      this.vel.add(dashImpulse);
 
+      if (window.AudioEngine) window.AudioEngine.play('powerup');
+      window.Engine.camera.shake(7, 0.25);
+      window.Engine.floatingTexts.spawn(this.pos.x, this.pos.y - 20, '⚡ HYDRO-DASH!', '#00f2fe', 16);
+
+      window.Engine.particles.emit(this.pos.x, this.pos.y, 18, {
+        color: '#00f2fe',
+        speed: 220,
+        angle: this.angle + Math.PI,
+        spread: 0.9,
+        size: 4.5,
+        life: 0.45,
+        type: 'spark'
+      });
+    }
 
     triggerHelperSwarm() {
+      if (this.energy < 20) {
+        if (window.UI) window.UI.showNotification("⚡ Low Solar Energy for Helper Swarm!");
+        return;
+      }
       this.energy = Math.max(0, this.energy - 20);
       this.swarmCooldown = 14.0;
       this.swarmTimer = this.swarmDuration;
@@ -412,46 +448,6 @@
       });
     }
 
-    triggerRecyclerBurst() {
-      this.energy -= 15;
-      this.recyclerCooldown = 5.0;
-      if (window.AudioEngine) window.AudioEngine.play('recycler_burst');
-      window.Engine.camera.shake(8, 0.4);
-
-      window.Engine.particles.emit(this.pos.x, this.pos.y, 25, {
-        color: '#00e676',
-        speed: 250,
-        size: 5,
-        life: 0.6,
-        type: 'spark'
-      });
-      window.Engine.particles.emit(this.pos.x, this.pos.y, 1, {
-        color: '#00e676',
-        size: 280,
-        life: 0.6,
-        type: 'ring'
-      });
-
-      if (window.LevelManager && window.LevelManager.currentLevelInstance) {
-        const level = window.LevelManager.currentLevelInstance;
-        level.oilSlicks = level.oilSlicks.filter(oil => {
-          if (oil.pos.dist(this.pos) < 240) {
-            window.Engine.floatingTexts.spawn(oil.pos.x, oil.pos.y, 'Oil Dispersed! +50 XP', '#00e676', 15);
-            window.SaveSystem.addXP(50);
-            return false;
-          }
-          return true;
-        });
-
-        level.debrisList.forEach(deb => {
-          if (deb.pos.dist(this.pos) < 260) {
-            const pullDir = this.pos.clone().sub(deb.pos).normalize().scale(450);
-            deb.vel.add(pullDir);
-          }
-        });
-      }
-    }
-
     collectDebris(debris) {
       if (this.cargo.length >= this.holdCapacity) {
         window.UI.showHoldFullAlert();
@@ -468,7 +464,24 @@
     }
 
     draw(ctx) {
-
+      // Draw Hydro-Dash afterimages
+      for (let i = 0; i < this.afterimages.length; i++) {
+        const img = this.afterimages[i];
+        ctx.save();
+        ctx.translate(img.x, img.y);
+        ctx.rotate(img.angle + Math.PI / 2);
+        ctx.globalAlpha = img.alpha * 0.45;
+        ctx.fillStyle = '#00f2fe';
+        ctx.beginPath();
+        ctx.moveTo(0, -27);
+        ctx.lineTo(15, -10);
+        ctx.lineTo(14, 18);
+        ctx.lineTo(-14, 18);
+        ctx.lineTo(-15, -10);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
 
       // Draw Autonomous Helper Mini-Drones
       for (let i = 0; i < this.miniDrones.length; i++) {

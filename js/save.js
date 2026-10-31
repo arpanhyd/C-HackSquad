@@ -1,6 +1,8 @@
 /**
- * AquaGuardian: Deep Clean - Save System (save.js)
- * Saves player coins, XP, unlocked levels, upgrades, and settings in browser LocalStorage.
+ * AquaGuardian: Deep Clean - Save System
+ * Persistent progress, Level/XP progression, Fortnite/Roblox style Skins Locker,
+ * Quests/Bounties, and LocalStorage wrapper.
+ * Built for C://hacks 2026
  */
 
 (function(window) {
@@ -14,6 +16,7 @@
     playerXP: 0,
     xpToNext: 400,
     unlockedLevel: 1,
+    consecutiveFails: 0,
     equippedSkin: 'default',
     unlockedSkins: ['default'],
     upgrades: {
@@ -24,19 +27,19 @@
       solar: 1,
       hull: 1,
       drones: 1,
-      multiplier: 1,
-      shield: 1,
-      neutralizer: 1
+      purifier: 1,
+      karmaShield: 1,
+      bountyRadar: 1
     },
     levelStats: {
-      1: { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 },
-      2: { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 },
-      3: { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 },
-      4: { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 }
+      1: { bestScore: 0, stars: 0, bestWQI: 0, time: 0 },
+      2: { bestScore: 0, stars: 0, bestWQI: 0, time: 0 },
+      3: { bestScore: 0, stars: 0, bestWQI: 0, time: 0 },
+      4: { bestScore: 0, stars: 0, bestWQI: 0, time: 0 }
     },
     achievements: {
       zero_casualties: { title: "Zero Casualties", desc: "Complete Level 3 without harming any marine wildlife", unlocked: false },
-      speed_cleaner: { title: "Speed Cleaner", desc: "Clear Level 1 in under 75 seconds", unlocked: false },
+      speed_cleaner: { title: "Speed Cleaner", desc: "Clear Level 1 in under 50 seconds", unlocked: false },
       pipe_master: { title: "Pipe Master", desc: "Install drainage filters without a single alignment failure", unlocked: false },
       coral_protector: { title: "Coral Protector", desc: "Finish Level 3 with perfect 100 Eco-Karma", unlocked: false },
       sludge_purifier: { title: "Sludge Purifier", desc: "Defeat the Sludge Leviathan and clean the estuary", unlocked: false },
@@ -45,7 +48,7 @@
       drift_king: { title: "Drift Champion", desc: "Perform a high-speed hydro drift for 3 seconds", unlocked: false },
       combo_god: { title: "Cleaning Frenzy", desc: "Reach a 10x Debris Combo Streak", unlocked: false },
       crate_hunter: { title: "Loot Raider", desc: "Open 3 Mystery Eco-Supply Drops", unlocked: false, progress: 0 },
-      swarm_commander: { title: "Swarm Commander", desc: "Deploy Helper Mini-Drones [G] 3 times", unlocked: false, progress: 0 },
+      swarm_commander: { title: "Swarm Commander", desc: "Deploy Autonomous Helper Mini-Drones [G] 3 times", unlocked: false, progress: 0 },
       slipstream_rider: { title: "Slipstream Rider", desc: "Ride Hydro-Slipstream Boost Gates 5 times", unlocked: false, progress: 0 }
     },
     settings: {
@@ -75,6 +78,7 @@
         window.localStorage.removeItem(testKey);
         return true;
       } catch (e) {
+        console.warn('LocalStorage unavailable, running in memory-session mode:', e);
         return false;
       }
     }
@@ -88,7 +92,7 @@
           this.data = this._deepMerge(this.data, parsed);
         }
       } catch (e) {
-        console.error('Could not load save data:', e);
+        console.error('Failed to load save data from localStorage:', e);
       }
     }
 
@@ -97,7 +101,7 @@
       try {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
       } catch (e) {
-        console.error('Could not save data:', e);
+        console.error('Failed to write save data to localStorage:', e);
       }
     }
 
@@ -106,25 +110,31 @@
       if (this.hasLocalStorage) {
         try {
           window.localStorage.removeItem(STORAGE_KEY);
-        } catch (e) {}
+        } catch (e) {
+          console.error('Failed to clear storage:', e);
+        }
       }
       this.save();
     }
 
     _deepMerge(target, source) {
+      if (!source || typeof source !== 'object') return target;
       for (const key of Object.keys(source)) {
-        if (source[key] instanceof Object && !Array.isArray(source[key]) && key in target) {
-          Object.assign(source[key], this._deepMerge(target[key], source[key]));
+        if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+          if (!target[key] || typeof target[key] !== 'object') {
+            target[key] = {};
+          }
+          this._deepMerge(target[key], source[key]);
+        } else {
+          target[key] = source[key];
         }
       }
-      Object.assign(target || {}, source);
       return target;
     }
 
     addCredits(amount) {
       if (typeof amount !== 'number' || isNaN(amount)) return;
-      const mult = (window.UpgradeSystem && window.UpgradeSystem.getTierData('multiplier').mult) || 1.0;
-      this.data.ecoCredits = Math.max(0, Math.floor(this.data.ecoCredits + amount * mult));
+      this.data.ecoCredits = Math.max(0, Math.floor(this.data.ecoCredits + amount));
       this.save();
     }
 
@@ -142,19 +152,17 @@
       this.data.playerXP += Math.floor(amount);
 
       let leveledUp = false;
+      let totalRewards = 0;
       while (this.data.playerXP >= this.data.xpToNext) {
         this.data.playerXP -= this.data.xpToNext;
         this.data.playerLevel++;
         this.data.xpToNext = Math.floor(this.data.xpToNext * 1.35);
         leveledUp = true;
 
-        // Give bonus money (Eco-Credits) whenever the player levels up
-        const levelReward = this.data.playerLevel * 60;
-        this.data.ecoCredits += levelReward;
-
-        if (window.UI) {
-          window.UI.showNotification(`🎉 Reached Level ${this.data.playerLevel}! Bonus Reward: +${levelReward} Coins!`);
-        }
+        // Money reward on level advancement!
+        const bonus = this.data.playerLevel * 100;
+        this.data.ecoCredits += bonus;
+        totalRewards += bonus;
 
         if (this.data.playerLevel >= 3 && !this.data.unlockedSkins.includes('neon_cyber')) {
           this.unlockSkin('neon_cyber');
@@ -172,7 +180,7 @@
       if (leveledUp) {
         if (window.AudioEngine) window.AudioEngine.play('levelup');
         if (window.UI) {
-          window.UI.showLevelUpCelebration(this.data.playerLevel);
+          window.UI.showLevelUpCelebration(this.data.playerLevel, totalRewards);
         }
       }
     }
@@ -200,56 +208,20 @@
     unlockNextLevel(currentLevel) {
       if (currentLevel >= this.data.unlockedLevel && this.data.unlockedLevel < 4) {
         this.data.unlockedLevel = currentLevel + 1;
-        // Give bonus money when unlocking a new mission level
-        const unlockBonus = this.data.unlockedLevel * 75;
-        this.data.ecoCredits += unlockBonus;
-        if (window.UI) {
-          window.UI.showNotification(`🌊 Mission ${this.data.unlockedLevel} Unlocked! +${unlockBonus} Bonus Coins!`);
-        }
         this.save();
       }
     }
 
     recordLevelCompletion(levelId, score, stars, wqi, timeSec) {
       if (!this.data.levelStats[levelId]) {
-        this.data.levelStats[levelId] = { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 };
+        this.data.levelStats[levelId] = { bestScore: 0, stars: 0, bestWQI: 0, time: 0 };
       }
       const stat = this.data.levelStats[levelId];
-      stat.failCount = 0; // Reset failure streak on win
-
-      // Give a completion money reward
-      const missionReward = Math.max(50, levelId * 80 + stars * 25);
-      this.data.ecoCredits += missionReward;
-
       if (score > stat.bestScore) stat.bestScore = score;
       if (stars > stat.stars) stat.stars = stars;
       if (wqi > stat.bestWQI) stat.bestWQI = Math.round(wqi);
       if (stat.time === 0 || timeSec < stat.time) stat.time = Math.round(timeSec);
       this.save();
-      return missionReward;
-    }
-
-    recordLevelFailure(levelId) {
-      if (!this.data.levelStats[levelId]) {
-        this.data.levelStats[levelId] = { bestScore: 0, stars: 0, bestWQI: 0, time: 0, failCount: 0 };
-      }
-      const stat = this.data.levelStats[levelId];
-      stat.failCount = (stat.failCount || 0) + 1;
-
-      // Coin penalty increases each time the player fails the level
-      const penalty = 40 + stat.failCount * 50;
-      this.data.ecoCredits = Math.max(0, this.data.ecoCredits - penalty);
-
-      // Decrease player level and unlocked mission level when failing
-      if (this.data.playerLevel > 1) {
-        this.data.playerLevel -= 1;
-      }
-      if (this.data.unlockedLevel > 1) {
-        this.data.unlockedLevel = Math.max(1, this.data.unlockedLevel - 1);
-      }
-
-      this.save();
-      return { penalty, failCount: stat.failCount, newLevel: this.data.playerLevel };
     }
 
     unlockAchievement(id) {

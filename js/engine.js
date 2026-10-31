@@ -149,6 +149,17 @@
       this.shakeDuration = 0;
       this.zoom = 1.0;
       this.lookAheadFactor = 0.45;
+      this.smoothedLookAhead = new Vector2(0, 0);
+    }
+
+    reset(targetPos) {
+      if (targetPos) {
+        this.pos.copy(targetPos);
+        this.target.copy(targetPos);
+      }
+      this.smoothedLookAhead.set(0, 0);
+      this.shakeIntensity = 0;
+      this.shakeDuration = 0;
     }
 
     resize(w, h) {
@@ -169,10 +180,15 @@
     }
 
     update(targetPos, targetVel, dt) {
-      // Look-ahead vector
-      const lookAhead = targetVel ? targetVel.clone().scale(this.lookAheadFactor) : new Vector2(0, 0);
-      this.target.x = targetPos.x + lookAhead.x;
-      this.target.y = targetPos.y + lookAhead.y;
+      // Smooth look-ahead vector lerping so sudden velocity changes don't jerk or vibrate the camera
+      const rawLookX = targetVel ? targetVel.x * this.lookAheadFactor : 0;
+      const rawLookY = targetVel ? targetVel.y * this.lookAheadFactor : 0;
+      const lookAheadLerp = Math.min(1.0, 5.0 * dt);
+      this.smoothedLookAhead.x += (rawLookX - this.smoothedLookAhead.x) * lookAheadLerp;
+      this.smoothedLookAhead.y += (rawLookY - this.smoothedLookAhead.y) * lookAheadLerp;
+
+      this.target.x = targetPos.x + this.smoothedLookAhead.x;
+      this.target.y = targetPos.y + this.smoothedLookAhead.y;
 
       // Smooth camera follow lerp
       const lerpSpeed = 4.5 * dt;

@@ -131,13 +131,13 @@
 
       // Skill Cooldown overlays
       this.cdSonar = document.getElementById('cdSonar');
-      this.cdRecycler = document.getElementById('cdRecycler');
-      
+      this.cdDash = document.getElementById('cdDash');
       this.cdSwarm = document.getElementById('cdSwarm');
     }
 
     _bindEvents() {
       window.addEventListener('keydown', (e) => {
+        if (e.repeat) return;
         if (this.minigameActive && (e.code === 'Space' || e.code === 'KeyE')) {
           e.preventDefault();
           this.submitMinigame();
@@ -146,7 +146,7 @@
 
       if (this.minigameContainer) {
         this.minigameContainer.addEventListener('pointerdown', (e) => {
-          if (this.minigameActive) {
+          if (this.minigameActive && (!this.minigameCooldown || this.minigameCooldown <= 0)) {
             e.preventDefault();
             this.submitMinigame();
           }
@@ -308,19 +308,27 @@
         }
       }
 
-      // Countdown Timer (3:00 on Level 1, decreasing by 10s each level)
+      // Timer (Countdown for mission levels with 1:15 min limit; elapsed for tutorial)
       if (this.timerText) {
-        if (level.id === 0) {
-          const m = Math.floor(level.timer / 60);
-          const s = Math.floor(level.timer % 60);
-          this.timerText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-          this.timerText.style.color = 'var(--text-main)';
-        } else {
-          const remaining = Math.max(0, (level.timeLimit || 180) - level.timer);
+        if (level.id > 0) {
+          const maxT = level.maxTime || 75;
+          const remaining = Math.max(0, maxT - level.timer);
           const m = Math.floor(remaining / 60);
           const s = Math.floor(remaining % 60);
           this.timerText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
-          this.timerText.style.color = remaining <= 30 ? '#ff3d71' : (remaining <= 60 ? '#ffd600' : 'var(--text-main)');
+          if (remaining <= 30) {
+            this.timerText.style.color = '#ff1744';
+            this.timerText.style.animation = 'pulse-timer 1s infinite';
+          } else {
+            this.timerText.style.color = '';
+            this.timerText.style.animation = '';
+          }
+        } else {
+          const m = Math.floor(level.timer / 60);
+          const s = Math.floor(level.timer % 60);
+          this.timerText.textContent = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+          this.timerText.style.color = '';
+          this.timerText.style.animation = '';
         }
       }
 
@@ -350,12 +358,11 @@
         const pct = Math.max(0, (d.sonarCooldown / maxCd) * 100);
         this.cdSonar.style.height = `${pct}%`;
       }
-      if (this.cdRecycler) {
-        const maxCd = 5.0;
-        const pct = Math.max(0, (d.recyclerCooldown / maxCd) * 100);
-        this.cdRecycler.style.height = `${pct}%`;
+      if (this.cdDash) {
+        const maxCd = 2.2;
+        const pct = Math.max(0, (d.dashCooldown / maxCd) * 100);
+        this.cdDash.style.height = `${pct}%`;
       }
-
       if (this.cdSwarm) {
         const maxCd = 14.0;
         const pct = Math.max(0, (d.swarmCooldown / maxCd) * 100);
@@ -498,6 +505,7 @@
       this.minigameCallback = callback;
       this.minigameCursor = 0;
       this.minigameDir = 1;
+      this.minigameCooldown = 0.25; // 250ms guard against accidental double-press / keydown repeat
 
       this.minigameTargetStart = 0.3 + Math.random() * 0.35;
       this.minigameTargetWidth = 0.22;
@@ -512,6 +520,10 @@
     }
 
     updateMinigame(dt) {
+      if (this.minigameCooldown > 0) {
+        this.minigameCooldown -= dt;
+      }
+
       this.minigameCursor += this.minigameDir * this.minigameSpeed * dt;
       if (this.minigameCursor >= 1.0) {
         this.minigameCursor = 1.0;
@@ -527,7 +539,7 @@
     }
 
     submitMinigame() {
-      if (!this.minigameActive) return;
+      if (!this.minigameActive || (this.minigameCooldown && this.minigameCooldown > 0)) return;
       this.minigameActive = false;
       if (this.minigameContainer) {
         this.minigameContainer.style.display = 'none';
@@ -610,14 +622,32 @@
       if (this.modalVictory) this.modalVictory.classList.add('active');
     }
 
-    showLevelUpCelebration(lvl) {
+    showLevelUpCelebration(lvl, reward = 0) {
       const banner = document.getElementById('levelUpBanner');
       const num = document.getElementById('levelUpNum');
+      const rewardEl = document.getElementById('levelUpReward');
       if (num) num.textContent = lvl;
+      if (rewardEl) {
+        rewardEl.textContent = reward > 0 ? `🪙 +${reward} Eco-Credits Bonus Granted!` : '';
+      }
       if (banner) {
         banner.style.display = 'flex';
-        setTimeout(() => { banner.style.display = 'none'; }, 3500);
+        setTimeout(() => { banner.style.display = 'none'; }, 4000);
       }
+    }
+
+    showSDGTip(msg) {
+      const banner = document.getElementById('sdgTipBanner');
+      if (!banner) return;
+      banner.innerHTML = `<span style="color:#00f2fe;font-weight:bold;">🌍 SDG 6 TIP:</span> ${msg}`;
+      banner.style.display = 'block';
+      banner.style.opacity = '1';
+
+      if (this._sdgTipTimer) clearTimeout(this._sdgTipTimer);
+      this._sdgTipTimer = setTimeout(() => {
+        banner.style.opacity = '0';
+        setTimeout(() => { banner.style.display = 'none'; }, 500);
+      }, 7000);
     }
 
     showNotification(msg) {
@@ -847,6 +877,9 @@
         if (!isMaxed && btn) {
           btn.onclick = () => {
             if (u.buyUpgrade(key)) {
+              if (window.MainGame && window.MainGame.currentLevel && window.MainGame.currentLevel.drone) {
+                window.MainGame.currentLevel.drone.applyUpgrades();
+              }
               this.populateShopCards();
               this.showNotification(`Upgraded ${item.name}!`);
             } else {
@@ -877,11 +910,17 @@
       if (pipesEl) pipesEl.textContent = `${stats.pipesCount} Filters / ${stats.barrelsCount} Barrels`;
       if (karmaEl) karmaEl.textContent = `${stats.ecoKarma}%`;
 
+      const rewardEl = document.getElementById('reportReward');
+      if (rewardEl) {
+        rewardEl.textContent = stats.levelReward ? `+${stats.levelReward} Credits` : '+150 Credits';
+      }
+
       const reportWqiEl = document.getElementById('reportWQI');
       if (reportWqiEl) {
         const score = stats.wqi;
         let rating = 'Fair';
-        if (score >= 91) rating = 'Excellent (Pristine)';
+        if (score >= 100) rating = '100% Pristine (PROMOTED!)';
+        else if (score >= 91) rating = 'Excellent (Pristine)';
         else if (score >= 71) rating = 'Good (SDG 6 Met)';
         else if (score >= 51) rating = 'Medium';
         else rating = 'Poor';

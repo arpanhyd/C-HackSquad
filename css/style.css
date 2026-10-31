@@ -824,6 +824,29 @@ html, body {
   0% { transform: scale(1); box-shadow: 0 0 15px rgba(0, 242, 254, 0.4); }
   100% { transform: scale(1.05); box-shadow: 0 0 28px rgba(0, 242, 254, 0.85); }
 }
+@keyframes pulse-timer {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.15); color: #ff1744; text-shadow: 0 0 12px rgba(255, 23, 68, 0.9); }
+  100% { transform: scale(1); }
+}
+
+.sdg-tip-banner {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.22), rgba(9, 29, 46, 0.95));
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  padding: 10px 22px;
+  max-width: 680px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ffffff;
+  box-shadow: 0 4px 22px rgba(0, 242, 254, 0.35);
+  pointer-events: none;
+  transition: opacity 0.5s ease;
+  backdrop-filter: blur(8px);
+  margin-bottom: 8px;
+}
+
 @keyframes fadeInDown {
   0% { transform: translateY(-12px); opacity: 0; }
   100% { transform: translateY(0); opacity: 1; }

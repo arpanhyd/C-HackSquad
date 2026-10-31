@@ -30,6 +30,14 @@
       window.Engine.init('gameCanvas');
       this._wireButtons();
 
+      const unlockAudio = () => {
+        if (window.AudioEngine && !window.AudioEngine.isInitialized) {
+          window.AudioEngine.init();
+        }
+      };
+      window.addEventListener('pointerdown', unlockAudio, { once: true });
+      window.addEventListener('keydown', unlockAudio, { once: true });
+
       window.Engine.start(
         (dt) => this.update(dt),
         (ctx) => this.render(ctx)
@@ -192,7 +200,8 @@
       if (btnGameOverRetry) {
         btnGameOverRetry.onclick = () => {
           this.playClick();
-          this.startLevel(this.currentLevelId);
+          const targetLevel = (window.SaveSystem && window.SaveSystem.data.unlockedLevel) ? Math.min(this.currentLevelId, window.SaveSystem.data.unlockedLevel) : this.currentLevelId;
+          this.startLevel(targetLevel);
         };
       }
       if (btnGameOverMenu) {
@@ -211,6 +220,9 @@
 
     playClick() {
       if (window.AudioEngine) {
+        if (!window.AudioEngine.isInitialized) {
+          window.AudioEngine.init();
+        }
         window.AudioEngine.play('click');
       }
     }
@@ -234,17 +246,26 @@
         this.currentLevel.bounds.maxY
       );
 
-      window.Engine.camera.pos.copy(this.currentLevel.drone.pos);
+      window.Engine.camera.reset(this.currentLevel.drone.pos);
       window.Engine.particles.clear();
       window.Engine.floatingTexts.clear();
 
       window.UI.hideAllModals();
       this.state = GameState.PLAYING;
+
+      if (window.AudioEngine) {
+        if (!window.AudioEngine.isInitialized) {
+          window.AudioEngine.init();
+        } else {
+          window.AudioEngine.resumeMusic();
+        }
+      }
     }
 
     pauseGame() {
       if (this.state === GameState.PLAYING) {
         this.state = GameState.PAUSED;
+        if (window.AudioEngine) window.AudioEngine.pauseMusic();
         window.UI.showPauseMenu();
       }
     }
@@ -252,12 +273,14 @@
     resumeGame() {
       if (this.state === GameState.PAUSED) {
         window.UI.hideAllModals();
+        if (window.AudioEngine) window.AudioEngine.resumeMusic();
         this.state = GameState.PLAYING;
       }
     }
 
     returnToTitle() {
       this.state = GameState.TITLE;
+      if (window.AudioEngine) window.AudioEngine.resumeMusic();
       window.UI.showTitleScreen();
     }
 

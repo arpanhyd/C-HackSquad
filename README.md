@@ -1,68 +1,143 @@
-# AquaGuardian: Deep Clean
-# C:// Hack -- HackSquad
+# 🌊 AquaGuardian: Deep Clean (Cursor-Pilot Edition)
 
-A 2D web game built for **C://hacks 2026** (CHIREC International School) around **UN Sustainable Development Goal 6: Clean Water and Sanitation**.
-
-In **AquaGuardian**, you pilot a solar-powered cleanup drone across polluted rivers, canals, coral bays, and industrial harbors. Your goal is to scoop up floating plastic waste, neutralize leaking chemical barrels, and clamp bio-filters onto untreated storm drainage pipes before time runs out.
+> An educational arcade marine cleanup game built for **C://hacks 2026 (CHIREC International School)** around **UN SDG 6: Clean Water and Sanitation**.  
+> Pilot an autonomous solar-powered vessel, clean plastic waste, neutralize chemical leaks, install wastewater bio-filters, and restore dying aquatic biomes.
 
 ---
 
-## How to Run the Game
+## 🎮 Play Locally
 
-No installation or external libraries are needed. Everything runs in standard HTML5 Canvas and JavaScript.
+No build tools, npm packages, or server setups required. The game runs on 100% vanilla Web standards (HTML5 Canvas, WebAudio API, LocalStorage).
 
 1. Clone or download this repository.
-2. Open `index.html` in any modern web browser (Chrome, Edge, Firefox, or Safari).
-   - *Tip:* You can also use the VS Code **Live Server** extension or run `python -m http.server 8000` in the project folder.
+2. Open `index.html` directly in any modern web browser (Chrome, Edge, Firefox, Brave, Safari).
+3. Alternatively, if you prefer running a local dev server:
+   ```bash
+   # Using Python
+   python -m http.server 8000
+   
+   # Or using npx
+   npx serve
+   ```
+4. Click anywhere on the title screen to start and hear the soundtrack!
 
 ---
 
-## Controls
+## 🌍 UN Sustainable Development Goal 6 (Clean Water & Sanitation)
 
-- **Move Mouse / Cursor:** Steer and fly the Aqua-Drone directly toward your cursor (you can also switch to classic `WASD` / `Arrow Keys` in Settings)
-- **Left-Click (Hold) or `Space`:** Fire Hydro-Boost thrusters
-- **Hover near Yellow Barrels (or Hold `E`):** Activate the chemical neutralizer beam
-- **`E` or Middle-Click near Sewer Pipes:** Start the Bio-Filter alignment mini-game
-- **`Q` or Scroll Wheel Up:** Send out a Sonar Ping to highlight hidden trash
-- **`R` or Scroll Wheel Down:** Trigger a Recycler Burst shockwave to clear oil slicks
-- **`G` or Key `3`:** Deploy helper mini-drones that automatically collect nearby plastic
-- **`P` or `Esc`:** Pause the game
+Billions of people worldwide lack access to safely managed drinking water. Over 80% of human wastewater is discharged into rivers, lakes, and oceans without any treatment.
+
+**AquaGuardian** turns real environmental telemetry into interactive gameplay mechanics:
+- **Target 6.3 (Reduce Pollution & Treat Wastewater):** Locate storm runoff sewer pipes and clamp industrial bio-filters to stop untreated effluent. Neutralize corroded chemical barrels before they poison groundwater.
+- **Target 6.6 (Protect Water Ecosystems):** Collect floating marine plastics (bottles, bags, six-pack rings, ghost fishing nets) and return them to automated Recycling Buoys.
+- **Wildlife Protection (Eco-Karma):** Clean without causing collateral damage. Speeding through schools of fish or crashing into coral reefs damages living habitats and lowers your Eco-Karma score.
 
 ---
 
-## Game Mechanics & SDG 6 Science
+## 🕹️ Controls & Navigation
 
-### 1. Water Quality Index (NSF-WQI) & Live Telemetry
-At the top of the screen, the game tracks water health using the real-world **National Sanitation Foundation Water Quality Index (0–100)**:
-- **DO (Dissolved Oxygen in mg/L):** How much oxygen is in the water for fish to breathe. Polluted water drops below `4 mg/L`; healthy water is above `6.5 mg/L`.
-- **Turbidity (NTU):** How cloudy or murky the water is from sewage and suspended trash. Lower NTU means clearer water that lets sunlight reach underwater plants.
-- **pH (6.0–7.4):** Measures acidity. Leaking chemical barrels make the water acidic (closer to `6.0`), while clean water stays near neutral (`7.0–7.4`).
+AquaGuardian supports **Mouse / Cursor Flight**, **Keyboard**, **Gamepad**, and **Mobile Touchscreens**.
 
-### 2. Mission Countdown & Penalties
-- **Level 1** gives you **3:00 (180 seconds)** to reach the target WQI score, and each new level reduces the time limit by **10 seconds** (`180s` -> `170s` -> `160s` -> `150s`).
-- If the timer hits `00:00` or the WQI bar drops to `0%`, the ecosystem collapses: your level drops by 1 and you lose Eco-Credits (with larger coin deductions if you fail repeatedly).
-- Completing missions and leveling up rewards you with bonus Eco-Credits to spend in the Tech Shop and Drone Locker.
+### 🖱️ Cursor Flight Mode (Default on PC)
+- **Mouse Movement**: Move your mouse pointer to guide your boat. The drone turns and flies toward your cursor smoothly.
+- **Left Click**: Hold for Hydro-Boost (drains battery).
+- **Auto-Interact**: Simply hover over yellow toxic barrels to start tractor neutralization, or press `E` near sewer pipes to start the Bio-Filter alignment minigame.
+- **Scroll Wheel**: Switch / activate special skills.
 
-### 3. Eco-Karma
-- **Eco-Karma (0%–100%)** tracks how carefully you pilot around marine wildlife and coral reefs.
-- Boosting into fish schools or crashing into coral reefs lowers your Eco-Karma and hurts your star rating at the end of the mission. Upgrading your **Biodegradable Smart Nets** or **Coral & Wildlife Bumpers** in the shop helps protect marine life.
+### ⌨️ Classic Keyboard Controls
+| Key | Action | What It Does |
+| :--- | :--- | :--- |
+| **`W` / `↑`** | Throttle Forward | Moves drone forward |
+| **`S` / `↓`** | Reverse / Brake | Slows down or backs up |
+| **`A` / `←`** | Steer Left | Turns left; sharp turn at high speed triggers Hydro-Drift |
+| **`D` / `→`** | Steer Right | Turns right; sharp turn at high speed triggers Hydro-Drift |
+| **`Space`** | Hydro-Boost | High-speed engine boost (uses solar battery) |
+| **`E`** | Interact | Hold near barrels to neutralize; press near pipes to clamp bio-filters |
+| **`Q`** | Sonar Ping | Radial acoustic pulse that highlights hidden trash and crates on radar |
+| **`F` / `Shift`** | Hydro-Dash | Quick forward warp dash |
+| **`G`** | Helper Swarm | Deploys autonomous companion mini-drones that laser-collect plastic |
+| **`P` / `Esc`** | Pause | Opens pause menu and settings |
 
 ---
 
-## Project Folder Structure
+## 🧪 Scientific Telemetry Explained (For Judges & Presenters)
+
+Under the central Water Quality Index meter, the game displays three real-time telemetry parameters dynamically tied to the ecosystem's health:
+
+### 1. NSF-WQI Score (National Sanitation Foundation Water Quality Index)
+- **What it is:** A composite index (0 to 100) developed by water scientists that summarizes multiple water quality tests into a single readable score.
+- **In the Game:** 
+  - `91 - 100`: **Excellent** (crystal-clear blue water).
+  - `71 - 90`: **Good (UN SDG 6 Benchmark)** (healthy target threshold).
+  - `51 - 70`: **Medium** (moderate contamination).
+  - `26 - 50`: **Poor** (coral reefs begin bleaching).
+  - `0 - 25`: **Toxic Sludge** (brown murky water; ecosystem collapse hazard).
+
+### 2. Dissolved Oxygen (DO)
+- **What it is:** The concentration of free oxygen molecules ($O_2$) dissolved in water, measured in milligrams per liter (`mg/L`).
+- **Why it matters:** Fish and marine organisms need dissolved oxygen to breathe through their gills.
+- **In the Game:** Healthy water maintains DO levels above **`5.0 - 9.0 mg/L`**. When pollutants and decaying sludge consume oxygen, DO plummets below **`2.0 mg/L`**, creating a "hypoxic dead zone" where aquatic life suffocates.
+
+### 3. Turbidity
+- **What it is:** The measure of water cloudiness, haziness, or clarity caused by suspended particles, measured in Nephelometric Turbidity Units (`NTU`).
+- **Why it matters:** High turbidity blocks sunlight from reaching underwater plants and coral reefs (stopping photosynthesis), clogs fish gills, and carries toxic contaminants.
+- **In the Game:** Clear, clean water sits below **`5 - 10 NTU`**. Heavily polluted sewage runoff pushes turbidity past **`60 - 85 NTU`**, turning the water murky and opaque.
+
+### 4. pH Level
+- **What it is:** A measure of how acidic or basic the water is on a scale from 0 to 14 (with 7.0 being neutral).
+- **Why it matters:** Freshwater and marine life thrive in a narrow neutral-alkaline window between **6.5 and 8.5**.
+- **In the Game:** Industrial runoff and chemical barrels drive the pH down into acidic ranges (**6.0**), damaging fish gills and dissolving calcium carbonate in coral reefs. Purifying the water restores it to a healthy **7.4**.
+
+---
+
+## 💡 Gameplay Systems & Features
+
+- **1:15 Min Mission Timer**: Each level gives you 75 seconds (1:15 min) to reach the required WQI benchmark. If the clock runs out, the mission fails, player level is decremented, and an escalating coin penalty is applied on repeated failures!
+- **Level Progression Rewards**: Reaching higher player levels and clearing mission zones rewards bonus Eco-Credits to spend in the Tech Shop.
+- **SDG 6 Fact Ticker**: Clean, non-intrusive banners pop up during gameplay sharing real United Nations water facts and tips.
+- **Eco-Karma Metric**: Clean responsibly! Crashing into fragile coral reefs or speeding through fish schools lowers your Eco-Karma rating.
+- **Full Tech Shop**:
+  - `Deep Sonar Array`: Expands radar ping range.
+  - `Recycling Cargo Hold`: Expands item storage before needing buoy drop-offs.
+  - `Magnetic Vacuum Collector`: Draws nearby debris straight into your hold.
+  - `Smart Bio-Nets`: Widens collection scoop and emits wildlife-safe acoustic cues.
+  - `Photovoltaic Solar Wings`: Recharges battery in daylight and adds night-time trickle storage.
+  - `Hydrofoil Engine & Hull`: Increases top speed, acceleration, and hull armor.
+  - `Autonomous Helper Swarm`: Companion mini-drones that automatically collect trash.
+  - `Micro-Bio Water Purifier`: Slows down ambient pollution decay.
+  - `Eco-Karma Wave Cushion`: Dampens collisions to protect coral reefs and marine life.
+  - `Eco-Bounty Multiplier`: Increases credit earnings on every piece of plastic recycled.
+- **Skins Locker**: Unlock and equip custom boat wraps (Eco-Cyan, Cyberpunk Neon, 24K Solar Gold, Toxic Hazard Slayer, Cosmic Void).
+- **Balanced Soundtrack**: In-game background music plays smoothly alongside procedural sound effects with dedicated volume sliders and mute controls in Settings.
+
+---
+
+## 📂 Project Structure
 
 ```text
-├── index.html          # Main game page, HUD layout, and menus
+AquaGuardian_CursorPilot_v4/
+├── index.html            # Main HTML structure, HUD overlays, modals
+├── audio/
+│   └── game_music.mp3    # Background soundtrack
 ├── css/
-│   └── style.css       # HUD, modal, and responsive styling
-└── js/
-    ├── engine.js       # 2D vector math, camera follow, particles, and 60 FPS game loop
-    ├── input.js        # Mouse cursor flight, keyboard, gamepad, and touch controls
-    ├── audio.js        # WebAudio synth music and sound effects with volume ducking
-    ├── save.js         # LocalStorage save system for coins, XP, skins, and upgrades
-    ├── upgrades.js     # Tech Shop upgrade tiers and stats
-    ├── entities.js     # Drone, trash, toxic barrels, sewer pipes, fish boids, and boss logic
-    ├── levels.js       # Cadet tutorial and 4 main campaign missions + 30s SDG 6 tips
-    ├── ui.js           # HUD updates, radar minimap, bio-filter mini-game, and SDG 6 quiz
-    └── main.js         # Game state controller and menu button wiring
+│   └── style.css         # Cyber-eco visual styling and responsive UI
+├── js/
+│   ├── audio.js          # Audio engine (BGM playback + WebAudio procedural SFX)
+│   ├── engine.js         # 2D canvas engine, camera follow, particles, text
+│   ├── entities.js       # Player drone, debris, fish, corals, barrels, pipes, boss
+│   ├── input.js          # Unified input (cursor flight, keyboard, gamepad, touch)
+│   ├── levels.js         # Level missions, WQI calculations, 1:15 timer, SDG tips
+│   ├── main.js           # State machine, game loop, pause/resume coordination
+│   ├── save.js           # LocalStorage save manager, XP progression, achievements
+│   ├── ui.js             # HUD management, telemetry calculations, modals, quiz
+│   └── upgrades.js       # Tech upgrade configs, pips, and stat formulas
+├── .gitignore            # Git exclusion rules
+├── LICENSE               # MIT License
+└── README.md             # Project documentation & pitch guide
 ```
+
+---
+
+## 📜 License
+
+This project is licensed under the MIT License - feel free to build upon and share it for educational and non-commercial purposes.
